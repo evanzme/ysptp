@@ -1,0 +1,10 @@
+services:
+  ysptp:
+    # 替换为 ghcr.io/<你的GitHub用户名(小写)>/<仓库名>:latest
+    image: ghcr.io/your-github-name/ysptp:latest
+    container_name: ysptp
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./data:/data
+    command: ["--port", "8766"]
