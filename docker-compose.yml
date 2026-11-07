@@ -1,9 +1,23 @@
 services:
-  ysptp:
+  ysp-live:
     image: ghcr.io/evanzme/ysptp:latest
-    container_name: ysptp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ysp-live-v9.5
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "8767:8767"
+    # 在 iStoreOS / OpenWrt 上如果需要 host 网络模式，可取消下行注释（使用 host 模式时需注释掉 ports）
+    # network_mode: host
     volumes:
-      - ./data:/data
-    command: ["--port", "8766"]
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+      - YSP_DATA_DIR=/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

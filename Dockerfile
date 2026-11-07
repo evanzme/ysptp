@@ -1,19 +1,21 @@
-# ---- build ----
-FROM rust:1-alpine AS builder
-RUN apk add --no-cache musl-dev
-WORKDIR /src
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
-RUN cargo build --release --locked
+ARG BASE_IMAGE=python:3.12-alpine
+FROM ${BASE_IMAGE}
 
-# ---- runtime ----
-FROM alpine:3
-RUN apk add --no-cache ca-certificates tzdata
-ENV TZ=Asia/Shanghai
-COPY --from=builder /src/target/release/ysptp-project /usr/local/bin/ysptp-project
-VOLUME ["/data"]
-EXPOSE 8766
-ENTRYPOINT ["/usr/local/bin/ysptp-project", \
-    "--meta-json", "/data/proxy-cache-state-rs.json", \
-    "--device-json", "/data/device-state-rs.json"]
-CMD ["--port", "8766"]
+ENV TZ=Asia/Shanghai \
+    PYTHONUNBUFFERED=1 \
+    YSP_DATA_DIR=/app/data
+
+RUN (apk add --no-cache nodejs tzdata ca-certificates || (sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && apk add --no-cache nodejs tzdata ca-certificates)) && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    mkdir -p /app /app/data
+
+WORKDIR /app
+COPY ysp-live-v9.5.py /app/ysp-live-v9.5.py
+COPY ysp-engine.js /app/ysp-engine.js
+RUN ln -sf /app/ysp-live-v9.5.py /app/ysp-live.py
+
+EXPOSE 8767
+VOLUME ["/app/data"]
+
+CMD ["sh", "-c", "mkdir -p /app/data && chmod -R 777 /app/data 2>/dev/null || true; exec python3 /app/ysp-live-v9.5.py 8767"]

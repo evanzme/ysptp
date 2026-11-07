@@ -1,3 +1,4 @@
 /target
 /data
 *-state-rs.json
+.DS_Store
